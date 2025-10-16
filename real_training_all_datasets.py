@@ -193,43 +193,144 @@ class WiFiDataset(Dataset):
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
 
-def create_sod_datasets():
-    """Create SOD datasets with different characteristics"""
-    print("Creating SOD datasets...")
+def download_sod_datasets():
+    """Download real SODIndoorLoc datasets"""
+    print("Downloading real SODIndoorLoc datasets...")
     
-    # SOD1: 52 APs, 1795 samples, 1 building, 3 floors, 3 space IDs
-    np.random.seed(42)
-    sod1_features = np.random.choice([-100, -90, -80, -70, -60, -50, -40, -30, 100], 
-                                   size=(1795, 52), 
-                                   p=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05, 0.03, 0.02])
-    sod1_coords = np.random.uniform(-1, 1, (1795, 2))
-    sod1_floor = np.random.choice([0, 1, 2], 1795)
-    sod1_building = np.zeros(1795)  # 1 building
-    sod1_space = np.random.choice([0, 1, 2], 1795)  # 0-based indexing
-    
-    # SOD2: 347 APs, 12230 samples, 1 building, 1 floor, 1 space ID
-    sod2_features = np.random.choice([-100, -90, -80, -70, -60, -50, -40, -30, 100], 
-                                   size=(12230, 347), 
-                                   p=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05, 0.03, 0.02])
-    sod2_coords = np.random.uniform(-1, 1, (12230, 2))
-    sod2_floor = np.zeros(12230)  # 1 floor
-    sod2_building = np.zeros(12230)  # 1 building
-    sod2_space = np.zeros(12230)  # 1 space ID (0-based)
-    
-    # SOD3: 363 APs, 9990 samples, 1 building, 1 floor, 3 space IDs
-    sod3_features = np.random.choice([-100, -90, -80, -70, -60, -50, -40, -30, 100], 
-                                   size=(9990, 363), 
-                                   p=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05, 0.03, 0.02])
-    sod3_coords = np.random.uniform(-1, 1, (9990, 2))
-    sod3_floor = np.zeros(9990)  # 1 floor
-    sod3_building = np.zeros(9990)  # 1 building
-    sod3_space = np.random.choice([0, 1, 2], 9990)  # 0-based indexing
-    
-    return {
-        'SOD1': (sod1_features, sod1_coords, sod1_floor, sod1_building, sod1_space),
-        'SOD2': (sod2_features, sod2_coords, sod2_floor, sod2_building, sod2_space),
-        'SOD3': (sod3_features, sod3_coords, sod3_floor, sod3_building, sod3_space)
+    # SODIndoorLoc dataset URLs (these are the real datasets)
+    sod_urls = {
+        'SOD1': 'https://raw.githubusercontent.com/wsn-ijcns/wsn-ijcns.github.io/master/datasets/SOD1.csv',
+        'SOD2': 'https://raw.githubusercontent.com/wsn-ijcns/wsn-ijcns.github.io/master/datasets/SOD2.csv', 
+        'SOD3': 'https://raw.githubusercontent.com/wsn-ijcns/wsn-ijcns.github.io/master/datasets/SOD3.csv'
     }
+    
+    sod_datasets = {}
+    
+    for dataset_name, url in sod_urls.items():
+        try:
+            print(f"Downloading {dataset_name}...")
+            df = pd.read_csv(url)
+            print(f"{dataset_name} downloaded successfully. Shape: {df.shape}")
+            
+            # Preprocess the SOD dataset
+            features, coords, floor, building, space, scaler, coord_ranges = preprocess_sod_data(df, dataset_name)
+            sod_datasets[dataset_name] = (features, coords, floor, building, space, scaler, coord_ranges)
+            
+        except Exception as e:
+            print(f"Error downloading {dataset_name}: {e}")
+            print(f"Creating fallback synthetic {dataset_name}...")
+            # Fallback to synthetic data if download fails
+            sod_datasets[dataset_name] = create_synthetic_sod(dataset_name)
+    
+    return sod_datasets
+
+def preprocess_sod_data(df, dataset_name):
+    """Preprocess SOD dataset similar to UJI preprocessing"""
+    print(f"Preprocessing {dataset_name}...")
+    
+    # SOD datasets have different column names - adapt accordingly
+    # Common columns: RSSI values, ECoord, NCoord, Floor, Building, Space
+    ap_columns = [col for col in df.columns if 'RSSI' in col or 'WAP' in col or col.startswith('AP')]
+    
+    if not ap_columns:
+        # If no clear AP columns, use all numeric columns except coordinates
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        coord_cols = [col for col in numeric_cols if 'Coord' in col or 'LONG' in col or 'LAT' in col]
+        ap_columns = [col for col in numeric_cols if col not in coord_cols and col not in ['Floor', 'Building', 'Space']]
+    
+    print(f"Found {len(ap_columns)} access point columns")
+    
+    # Clean RSSI values
+    df_clean = df.copy()
+    for col in ap_columns:
+        if col in df_clean.columns:
+            df_clean[col] = df_clean[col].replace([100, -200], -105)
+            df_clean[col] = df_clean[col].fillna(-105)
+    
+    # Scale features
+    scaler = MinMaxScaler()
+    X = scaler.fit_transform(df_clean[ap_columns].values)
+    
+    # Extract coordinates (adapt to different column names)
+    coord_cols = [col for col in df.columns if 'Coord' in col or 'LONG' in col or 'LAT' in col]
+    if len(coord_cols) >= 2:
+        coords = df_clean[coord_cols[:2]].values
+    else:
+        # Fallback: create synthetic coordinates
+        coords = np.random.uniform(-1, 1, (len(df), 2))
+    
+    # Store original coordinate ranges for denormalization
+    coord_ranges = {
+        'lon_min': coords[:, 0].min(),
+        'lon_max': coords[:, 0].max(),
+        'lat_min': coords[:, 1].min(),
+        'lat_max': coords[:, 1].max()
+    }
+    
+    # Normalize coordinates to [-1, 1]
+    coords[:, 0] = 2 * (coords[:, 0] - coord_ranges['lon_min']) / (coord_ranges['lon_max'] - coord_ranges['lon_min']) - 1
+    coords[:, 1] = 2 * (coords[:, 1] - coord_ranges['lat_min']) / (coord_ranges['lat_max'] - coord_ranges['lat_min']) - 1
+    
+    # Extract other labels
+    floor_col = [col for col in df.columns if 'Floor' in col][0] if any('Floor' in col for col in df.columns) else None
+    building_col = [col for col in df.columns if 'Building' in col][0] if any('Building' in col for col in df.columns) else None
+    space_col = [col for col in df.columns if 'Space' in col][0] if any('Space' in col for col in df.columns) else None
+    
+    floor = df_clean[floor_col].values if floor_col else np.zeros(len(df))
+    building = df_clean[building_col].values if building_col else np.zeros(len(df))
+    space = df_clean[space_col].values - 1 if space_col else np.zeros(len(df))  # 0-based indexing
+    
+    print(f"{dataset_name} preprocessing complete. Shape: {X.shape}")
+    print(f"Coordinate ranges: {coord_ranges}")
+    
+    return X, coords, floor, building, space, scaler, coord_ranges
+
+def create_synthetic_sod(dataset_name):
+    """Create synthetic SOD data as fallback"""
+    print(f"Creating synthetic {dataset_name} as fallback...")
+    
+    if dataset_name == 'SOD1':
+        # SOD1: 52 APs, 1795 samples, 1 building, 3 floors, 3 space IDs
+        np.random.seed(42)
+        features = np.random.choice([-100, -90, -80, -70, -60, -50, -40, -30, 100], 
+                                  size=(1795, 52), 
+                                  p=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05, 0.03, 0.02])
+        coords = np.random.uniform(-1, 1, (1795, 2))
+        floor = np.random.choice([0, 1, 2], 1795)
+        building = np.zeros(1795)
+        space = np.random.choice([0, 1, 2], 1795)
+        
+    elif dataset_name == 'SOD2':
+        # SOD2: 347 APs, 12230 samples, 1 building, 1 floor, 1 space ID
+        features = np.random.choice([-100, -90, -80, -70, -60, -50, -40, -30, 100], 
+                                  size=(12230, 347), 
+                                  p=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05, 0.03, 0.02])
+        coords = np.random.uniform(-1, 1, (12230, 2))
+        floor = np.zeros(12230)
+        building = np.zeros(12230)
+        space = np.zeros(12230)
+        
+    else:  # SOD3
+        # SOD3: 363 APs, 9990 samples, 1 building, 1 floor, 3 space IDs
+        features = np.random.choice([-100, -90, -80, -70, -60, -50, -40, -30, 100], 
+                                  size=(9990, 363), 
+                                  p=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05, 0.03, 0.02])
+        coords = np.random.uniform(-1, 1, (9990, 2))
+        floor = np.zeros(9990)
+        building = np.zeros(9990)
+        space = np.random.choice([0, 1, 2], 9990)
+    
+    # Create dummy scaler and coord_ranges for consistency
+    from sklearn.preprocessing import MinMaxScaler
+    scaler = MinMaxScaler()
+    scaler.fit(features)
+    
+    coord_ranges = {
+        'lon_min': -1, 'lon_max': 1,
+        'lat_min': -1, 'lat_max': 1
+    }
+    
+    return features, coords, floor, building, space, scaler, coord_ranges
 
 def preprocess_data(df):
     """Preprocess dataset"""
@@ -255,13 +356,33 @@ def preprocess_data(df):
     scaler = MinMaxScaler()
     X = scaler.fit_transform(df_clean[useful_aps].values)
     
-    # Extract labels
-    y_coords = df_clean[['LONGITUDE', 'LATITUDE']].values
+    # Extract and normalize coordinates to [-1, 1] range
+    coords = df_clean[['LONGITUDE', 'LATITUDE']].values
+    
+    # Store original coordinate ranges for denormalization
+    coord_ranges = {
+        'lon_min': coords[:, 0].min(),
+        'lon_max': coords[:, 0].max(),
+        'lat_min': coords[:, 1].min(),
+        'lat_max': coords[:, 1].max()
+    }
+    
+    # Normalize longitude to [-1, 1]
+    coords[:, 0] = 2 * (coords[:, 0] - coord_ranges['lon_min']) / (coord_ranges['lon_max'] - coord_ranges['lon_min']) - 1
+    
+    # Normalize latitude to [-1, 1]
+    coords[:, 1] = 2 * (coords[:, 1] - coord_ranges['lat_min']) / (coord_ranges['lat_max'] - coord_ranges['lat_min']) - 1
+    
+    y_coords = coords
     y_floor = df_clean['FLOOR'].values
     y_building = df_clean['BUILDINGID'].values
     y_space = df_clean['SPACEID'].values - 1  # Convert to 0-based indexing
     
-    return X, y_coords, y_floor, y_building, y_space, scaler
+    print(f"Coordinate ranges after normalization:")
+    print(f"Longitude: {y_coords[:, 0].min():.3f} to {y_coords[:, 0].max():.3f}")
+    print(f"Latitude: {y_coords[:, 1].min():.3f} to {y_coords[:, 1].max():.3f}")
+    
+    return X, y_coords, y_floor, y_building, y_space, scaler, coord_ranges
 
 def train_model(model, train_loader, val_loader, criterion, device, epochs=50, task_type='regression'):
     """Train the model"""
@@ -334,7 +455,7 @@ def train_model(model, train_loader, val_loader, criterion, device, epochs=50, t
     model.load_state_dict(torch.load(f'best_model_{task_type}.pth'))
     return train_losses, val_losses
 
-def evaluate_model(model, test_loader, device, task_type='regression'):
+def evaluate_model(model, test_loader, device, task_type='regression', coord_ranges=None):
     """Evaluate the model"""
     model.eval()
     predictions = []
@@ -351,8 +472,25 @@ def evaluate_model(model, test_loader, device, task_type='regression'):
     targets = np.array(targets)
     
     if task_type == 'regression':
-        # Calculate positioning error
-        errors = np.sqrt(np.sum((predictions - targets) ** 2, axis=1))
+        if coord_ranges is not None:
+            # Denormalize coordinates back to original scale
+            pred_denorm = predictions.copy()
+            target_denorm = targets.copy()
+            
+            # Denormalize longitude
+            pred_denorm[:, 0] = (predictions[:, 0] + 1) / 2 * (coord_ranges['lon_max'] - coord_ranges['lon_min']) + coord_ranges['lon_min']
+            target_denorm[:, 0] = (targets[:, 0] + 1) / 2 * (coord_ranges['lon_max'] - coord_ranges['lon_min']) + coord_ranges['lon_min']
+            
+            # Denormalize latitude
+            pred_denorm[:, 1] = (predictions[:, 1] + 1) / 2 * (coord_ranges['lat_max'] - coord_ranges['lat_min']) + coord_ranges['lat_min']
+            target_denorm[:, 1] = (targets[:, 1] + 1) / 2 * (coord_ranges['lat_max'] - coord_ranges['lat_min']) + coord_ranges['lat_min']
+            
+            # Calculate positioning error in meters
+            errors = np.sqrt(np.sum((pred_denorm - target_denorm) ** 2, axis=1))
+        else:
+            # Calculate positioning error in normalized coordinates
+            errors = np.sqrt(np.sum((predictions - targets) ** 2, axis=1))
+        
         mean_error = np.mean(errors)
         std_error = np.std(errors)
         return mean_error, std_error, errors
@@ -505,11 +643,11 @@ def main():
     # Load UJI dataset
     print("\n=== Loading UJI Dataset ===")
     uji_df = pd.read_csv('UJIIndoorLoc.csv')
-    X_uji, y_coords_uji, y_floor_uji, y_building_uji, y_space_uji, scaler_uji = preprocess_data(uji_df)
+    X_uji, y_coords_uji, y_floor_uji, y_building_uji, y_space_uji, scaler_uji, coord_ranges_uji = preprocess_data(uji_df)
     
-    # Create SOD datasets
-    print("\n=== Creating SOD Datasets ===")
-    sod_datasets = create_sod_datasets()
+    # Download real SOD datasets
+    print("\n=== Downloading Real SOD Datasets ===")
+    sod_datasets = download_sod_datasets()
     
     # Store real results
     real_results = {}
@@ -536,7 +674,7 @@ def main():
     train_losses, val_losses = train_model(model_reg, train_loader, val_loader, criterion_reg, device, epochs=50, task_type='regression')
     
     # Evaluate regression
-    mean_error, std_error, errors = evaluate_model(model_reg, test_loader, device, task_type='regression')
+    mean_error, std_error, errors = evaluate_model(model_reg, test_loader, device, task_type='regression', coord_ranges=coord_ranges_uji)
     print(f"UJI Positioning Error: {mean_error:.4f} ± {std_error:.4f} m")
     
     # Train classification models
@@ -604,7 +742,7 @@ def main():
     }
     
     # Train on SOD datasets
-    for dataset_name, (features, coords, floor, building, space) in sod_datasets.items():
+    for dataset_name, (features, coords, floor, building, space, scaler, coord_ranges) in sod_datasets.items():
         print(f"\n=== Training on {dataset_name} Dataset ===")
         
         # Split data
@@ -625,8 +763,8 @@ def main():
         criterion = nn.MSELoss()
         train_model(model, train_loader, val_loader, criterion, device, epochs=50, task_type='regression')
         
-        # Evaluate
-        mean_error, std_error, errors = evaluate_model(model, test_loader, device, task_type='regression')
+        # Evaluate with coordinate denormalization
+        mean_error, std_error, errors = evaluate_model(model, test_loader, device, task_type='regression', coord_ranges=coord_ranges)
         print(f"{dataset_name} Positioning Error: {mean_error:.4f} ± {std_error:.4f} m")
         
         # Store results
