@@ -1,0 +1,236 @@
+======================================================================
+SOD INDOOR LOCALIZATION - FINAL IMPLEMENTATION
+======================================================================
+Device: cuda
+GPU: Tesla T4
+======================================================================
+
+Searching for SOD datasets...
+
+✅ Found 3 dataset(s):
+  • SOD1 (CETC331)
+  • SOD2 (HCXY)
+  • SOD3 (SYL)
+
+======================================================================
+PROCESSING: SOD1 (CETC331)
+======================================================================
+
+======================================================================
+Loading SOD1 (CETC331)
+======================================================================
+Original - Train: 955, Test: 840
+Combined samples: 1795
+Detected 52 AP columns
+Valid APs: 50 (removed 2 all-100)
+Using SPATIAL split (different locations in train/test)
+Final split - Train: 1339, Test: 456
+Coordinate range: 16.2m × 56.8m
+Floors: 3 classes
+
+Optimal Configuration:
+  Architecture: [50, 128, 64, 2]
+  Learning Rate: 0.000200
+  Dropout: 0.1
+  Epochs: 500
+Using MinMaxScaler for coordinates
+
+==================================================
+Training Position Prediction Model
+==================================================
+
+Training: LR=0.000200, WD=0.0050, Patience=30
+Epoch  25/500 - Train: 0.019287, Val: 0.026906, LR: 0.0002000
+Epoch  50/500 - Train: 0.011915, Val: 0.022951, LR: 0.0002000
+Epoch  75/500 - Train: 0.009283, Val: 0.020960, LR: 0.0002000
+Epoch 100/500 - Train: 0.008161, Val: 0.020717, LR: 0.0002000
+  → LR reduced: 0.0002000 → 0.0001400
+Epoch 125/500 - Train: 0.007159, Val: 0.020074, LR: 0.0001400
+Early stopping at epoch 127 (best: epoch 97)
+✅ Loaded best model from epoch 97, val_loss=0.019517
+
+======================================================================
+POSITION RESULTS: SOD1 (CETC331)
+======================================================================
+Mean Error:       2.743 m
+Median Error:     2.101 m
+Std Dev:          2.895 m
+75th Percentile:  3.417 m
+90th Percentile:  4.866 m
+Range:            [0.059, 35.929] m
+======================================================================
+
+❌ NEEDS WORK
+Paper: 1.10m  |  Ours: 2.74m  |  Diff: +1.64m
+
+==================================================
+Training Floor Classification Model
+==================================================
+Early stopping at epoch 18
+
+✅ Floor Classification: 100.00%
+
+Confusion Matrix:
+[[117   0   0]
+ [  0 222   0]
+ [  0   0 117]]
+
+======================================================================
+PROCESSING: SOD2 (HCXY)
+======================================================================
+
+======================================================================
+Loading SOD2 (HCXY)
+======================================================================
+Original - Train: 11370, Test: 860
+Combined samples: 12230
+Detected 347 AP columns
+Valid APs: 346 (removed 1 all-100)
+Using SPATIAL split (different locations in train/test)
+Final split - Train: 8670, Test: 3560
+Coordinate range: 117.3m × 41.0m
+
+Optimal Configuration:
+  Architecture: [346, 256, 128, 2]
+  Learning Rate: 0.000800
+  Dropout: 0.0
+  Epochs: 350
+Using MinMaxScaler for coordinates
+
+==================================================
+Training Position Prediction Model
+==================================================
+
+Training: LR=0.000800, WD=0.0100, Patience=20
+Epoch  25/350 - Train: 0.000088, Val: 0.007712, LR: 0.0008000
+Epoch  50/350 - Train: 0.000204, Val: 0.006629, LR: 0.0008000
+  → LR reduced: 0.0008000 → 0.0005600
+Epoch  75/350 - Train: 0.000012, Val: 0.006067, LR: 0.0005600
+Early stopping at epoch 78 (best: epoch 58)
+✅ Loaded best model from epoch 58, val_loss=0.005661
+
+======================================================================
+POSITION RESULTS: SOD2 (HCXY)
+======================================================================
+Mean Error:       2.205 m
+Median Error:     1.425 m
+Std Dev:          3.721 m
+75th Percentile:  2.249 m
+90th Percentile:  3.305 m
+Range:            [0.030, 46.503] m
+======================================================================
+
+❌ NEEDS WORK
+Paper: 0.15m  |  Ours: 2.20m  |  Diff: +2.05m
+
+======================================================================
+PROCESSING: SOD3 (SYL)
+======================================================================
+
+======================================================================
+Loading SOD3 (SYL)
+======================================================================
+Original - Train: 8880, Test: 1020
+Combined samples: 9900
+Detected 363 AP columns
+Valid APs: 324 (removed 39 all-100)
+Using SPATIAL split (different locations in train/test)
+Final split - Train: 6950, Test: 2950
+Coordinate range: 63.4m × 29.6m
+
+Optimal Configuration:
+  Architecture: [324, 200, 100, 2]
+  Learning Rate: 0.000500
+  Dropout: 0.05
+  Epochs: 400
+Using MinMaxScaler for coordinates
+
+==================================================
+Training Position Prediction Model
+==================================================
+
+Training: LR=0.000500, WD=0.0080, Patience=25
+Epoch  25/400 - Train: 0.000708, Val: 0.040349, LR: 0.0005000
+Epoch  50/400 - Train: 0.000479, Val: 0.035368, LR: 0.0005000
+Epoch  75/400 - Train: 0.000488, Val: 0.039957, LR: 0.0005000
+Epoch 100/400 - Train: 0.000332, Val: 0.026399, LR: 0.0005000
+Epoch 125/400 - Train: 0.000506, Val: 0.029904, LR: 0.0005000
+  → LR reduced: 0.0005000 → 0.0003500
+Early stopping at epoch 148 (best: epoch 123)
+✅ Loaded best model from epoch 123, val_loss=0.020901
+
+======================================================================
+POSITION RESULTS: SOD3 (SYL)
+======================================================================
+Mean Error:       3.092 m
+Median Error:     1.751 m
+Std Dev:          4.286 m
+75th Percentile:  3.430 m
+90th Percentile:  5.954 m
+Range:            [0.142, 51.494] m
+======================================================================
+
+❌ NEEDS WORK
+Paper: 0.26m  |  Ours: 3.09m  |  Diff: +2.83m
+
+======================================================================
+FINAL SUMMARY
+======================================================================
+
+Building             Our Result   Paper      Diff       Status
+----------------------------------------------------------------------
+SOD1 (CETC331)       2.743        1.10       1.64       ❌ Poor
+SOD2 (HCXY)          2.205        0.15       2.05       ❌ Poor
+SOD3 (SYL)           3.092        0.26       2.83       ❌ Poor
+
+======================================================================
+DETAILED COMPARISON
+======================================================================
+
+SOD1 (CETC331):
+  Position Error:
+    Mean:   2.743m (Paper: 1.10m)
+    Median: 2.101m
+    90th %: 4.866m
+  Floor Accuracy: 100.00%
+  Dataset Info:
+    Features: 50
+    Coord Range: 16.2m × 56.8m
+    Train/Test: 1339/456
+
+SOD2 (HCXY):
+  Position Error:
+    Mean:   2.205m (Paper: 0.15m)
+    Median: 1.425m
+    90th %: 3.305m
+  Dataset Info:
+    Features: 346
+    Coord Range: 117.3m × 41.0m
+    Train/Test: 8670/3560
+
+SOD3 (SYL):
+  Position Error:
+    Mean:   3.092m (Paper: 0.26m)
+    Median: 1.751m
+    90th %: 5.954m
+  Dataset Info:
+    Features: 324
+    Coord Range: 63.4m × 29.6m
+    Train/Test: 6950/2950
+
+======================================================================
+STATISTICS
+======================================================================
+Average difference from paper: +2.177m
+Better than paper: 0/3
+Worse than paper: 3/3
+Similar to paper (±0.3m): 0/3
+
+======================================================================
+NOTES
+======================================================================
+• Using spatial split (different locations in train/test)
+• Paper's 0.15m result is suspiciously perfect - may not be reproducible
+• Results within ±0.5m of paper are considered good
+• Floor accuracy 95-99% is realistic (100% indicates overfitting)
+======================================================================

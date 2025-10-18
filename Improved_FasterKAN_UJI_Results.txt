@@ -1,0 +1,142 @@
+Using device: cuda
+GPU: Tesla T4
+
+Merging training and validation datasets...
+Training samples: 19937
+Validation samples: 1111
+✅ Merged dataset saved: 21048 total samples
+
+Loading UJIIndoorLoc dataset...
+Original WAPs: 520
+Valid WAPs (removed all-100 columns): 520
+Coordinate ranges: [396.15234 272.     ]
+Final dataset shape: (21048, 520)
+
+✅ Input dimension: 520 (correctly filtered!)
+Number of samples: 21048
+Number of floor&building classes: 13
+Number of space ID classes: 124
+
+======================================================================
+TASK 1: COORDINATE REGRESSION
+======================================================================
+
+Original coord range: [0. 0.] to [396.15234 272.     ]
+Scaled coord range: [-1.8393993 -1.882474 ] to [1.3532684 2.148449 ]
+
+Training Optimized FasterKAN...
+Epoch 5/200 - Train Loss: 0.0065, Val Loss: 0.0066, LR: 0.001000
+Epoch 10/200 - Train Loss: 0.0048, Val Loss: 0.0063, LR: 0.001000
+Epoch 15/200 - Train Loss: 0.0053, Val Loss: 0.0058, LR: 0.001000
+  → Learning rate reduced: 0.001000 → 0.000500
+Epoch 20/200 - Train Loss: 0.0038, Val Loss: 0.0046, LR: 0.000500
+Epoch 25/200 - Train Loss: 0.0036, Val Loss: 0.0047, LR: 0.000500
+Epoch 30/200 - Train Loss: 0.0040, Val Loss: 0.0051, LR: 0.000500
+Epoch 35/200 - Train Loss: 0.0035, Val Loss: 0.0049, LR: 0.000500
+  → Learning rate reduced: 0.000500 → 0.000250
+Epoch 40/200 - Train Loss: 0.0040, Val Loss: 0.0049, LR: 0.000250
+Epoch 45/200 - Train Loss: 0.0031, Val Loss: 0.0044, LR: 0.000250
+  → Learning rate reduced: 0.000250 → 0.000125
+Epoch 50/200 - Train Loss: 0.0030, Val Loss: 0.0043, LR: 0.000125
+Epoch 55/200 - Train Loss: 0.0030, Val Loss: 0.0043, LR: 0.000125
+Epoch 60/200 - Train Loss: 0.0030, Val Loss: 0.0043, LR: 0.000125
+  → Learning rate reduced: 0.000125 → 0.000063
+Epoch 65/200 - Train Loss: 0.0029, Val Loss: 0.0043, LR: 0.000063
+Epoch 70/200 - Train Loss: 0.0029, Val Loss: 0.0042, LR: 0.000063
+Epoch 75/200 - Train Loss: 0.0029, Val Loss: 0.0043, LR: 0.000063
+  → Learning rate reduced: 0.000063 → 0.000031
+Epoch 80/200 - Train Loss: 0.0028, Val Loss: 0.0043, LR: 0.000031
+  → Learning rate reduced: 0.000031 → 0.000016
+Epoch 85/200 - Train Loss: 0.0028, Val Loss: 0.0042, LR: 0.000016
+Early stopping at epoch 85
+
+======================================================================
+✅ OPTIMIZED FasterKAN - Mean Position Error: 3.47 m
+   Median Error: 1.66 m
+   75th Percentile: 3.63 m
+   90th Percentile: 7.35 m
+======================================================================
+
+======================================================================
+TASK 2: FLOOR & BUILDING CLASSIFICATION
+======================================================================
+
+Training FasterKAN for Floor & Building...
+Epoch 5/100 - Train Acc: 0.9866, Val Acc: 0.9786, LR: 0.001000
+Epoch 10/100 - Train Acc: 0.9928, Val Acc: 0.9892, LR: 0.001000
+Epoch 15/100 - Train Acc: 0.9946, Val Acc: 0.9883, LR: 0.001000
+  → Learning rate reduced: 0.001000 → 0.000500
+Epoch 20/100 - Train Acc: 0.9967, Val Acc: 0.9914, LR: 0.000500
+Epoch 25/100 - Train Acc: 0.9963, Val Acc: 0.9907, LR: 0.000500
+Epoch 30/100 - Train Acc: 0.9963, Val Acc: 0.9883, LR: 0.000250
+  → Learning rate reduced: 0.000500 → 0.000250
+Epoch 35/100 - Train Acc: 0.9975, Val Acc: 0.9924, LR: 0.000250
+  → Learning rate reduced: 0.000250 → 0.000125
+Early stopping at epoch 39
+
+======================================================================
+Floor & Building Classification Results:
+  Accuracy: 99.30%
+  Precision: 0.9931
+  Recall: 0.9930
+  F1-Score: 0.9930
+======================================================================
+
+======================================================================
+TASK 3: SPACE ID CLASSIFICATION
+======================================================================
+
+Training FasterKAN for Space ID...
+Epoch 5/100 - Train Acc: 0.3279, Val Acc: 0.3352, LR: 0.001000
+Epoch 10/100 - Train Acc: 0.5938, Val Acc: 0.5042, LR: 0.001000
+Epoch 15/100 - Train Acc: 0.6897, Val Acc: 0.5753, LR: 0.001000
+Epoch 20/100 - Train Acc: 0.7480, Val Acc: 0.6067, LR: 0.001000
+Epoch 25/100 - Train Acc: 0.7546, Val Acc: 0.6114, LR: 0.001000
+Epoch 30/100 - Train Acc: 0.7597, Val Acc: 0.6196, LR: 0.001000
+  → Learning rate reduced: 0.001000 → 0.000500
+Epoch 35/100 - Train Acc: 0.8800, Val Acc: 0.6711, LR: 0.000500
+Epoch 40/100 - Train Acc: 0.8886, Val Acc: 0.6784, LR: 0.000500
+  → Learning rate reduced: 0.000500 → 0.000250
+Epoch 45/100 - Train Acc: 0.9373, Val Acc: 0.7083, LR: 0.000250
+Epoch 50/100 - Train Acc: 0.9477, Val Acc: 0.7115, LR: 0.000250
+Epoch 55/100 - Train Acc: 0.9526, Val Acc: 0.7058, LR: 0.000250
+  → Learning rate reduced: 0.000250 → 0.000125
+Epoch 60/100 - Train Acc: 0.9592, Val Acc: 0.7186, LR: 0.000125
+Epoch 65/100 - Train Acc: 0.9663, Val Acc: 0.7181, LR: 0.000125
+Epoch 70/100 - Train Acc: 0.9680, Val Acc: 0.7180, LR: 0.000125
+  → Learning rate reduced: 0.000125 → 0.000063
+Epoch 75/100 - Train Acc: 0.9683, Val Acc: 0.7192, LR: 0.000063
+  → Learning rate reduced: 0.000063 → 0.000031
+Epoch 80/100 - Train Acc: 0.9698, Val Acc: 0.7202, LR: 0.000031
+Epoch 85/100 - Train Acc: 0.9699, Val Acc: 0.7207, LR: 0.000031
+Epoch 90/100 - Train Acc: 0.9709, Val Acc: 0.7205, LR: 0.000016
+  → Learning rate reduced: 0.000031 → 0.000016
+Epoch 95/100 - Train Acc: 0.9708, Val Acc: 0.7246, LR: 0.000016
+Epoch 100/100 - Train Acc: 0.9707, Val Acc: 0.7226, LR: 0.000016
+
+======================================================================
+Space ID Classification Results:
+  Accuracy: 72.46%
+  Precision: 0.7354
+  Recall: 0.7246
+  F1-Score: 0.7256
+======================================================================
+
+
+======================================================================
+FINAL RESULTS SUMMARY
+======================================================================
+
+Coordinate Regression:
+  Mean Position Error: 3.47 m
+
+Floor & Building Classification: 99.30%
+Space ID Classification: 72.46%
+
+======================================================================
+COMPARISON WITH PAPER
+======================================================================
+Floor & Building: 99.00% (Paper) vs 99.30% (Ours) [+0.30%]
+Space ID:         71.00% (Paper) vs 72.46% (Ours) [+1.46%]
+Position Error:   3.56m  (Paper) vs 3.47m (Ours) [+0.09m]
+======================================================================
